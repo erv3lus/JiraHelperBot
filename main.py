@@ -35,14 +35,6 @@ def update_tasks(message):
     # Вызов функции check_for_new_comments для запроса обновлений комментариев
     handlers.update_tasks()
 
-def cancel_timers():
-    for timer in threading.enumerate():
-        if isinstance(timer, threading.Timer):
-            timer.cancel()
-
-def cleanup_and_exit():
-    cancel_timers()
-    sys.exit(0)
 
 def sсhedule_tasks():
     try:
@@ -61,10 +53,4 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:  # Обработка прерывания пользователем (Ctrl+C)
-        cleanup_and_exit()
-    except Exception as e:  # Обработка других исключений
-        print(f"An error occurred: {str(e)}")
-        cleanup_and_exit()
+    main()

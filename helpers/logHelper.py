@@ -1,7 +1,10 @@
 import logging
 
+# Определение имени логгера
+name = "botLogging"
+
 # Настройка логгирования
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(name)
 logger.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -10,7 +13,7 @@ console_handler = logging.StreamHandler()
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
-# Обработчик для отправки логов в Telegram
-#telegram_logging_handler = TelegramLoggingHandler()
-#telegram_logging_handler.setFormatter(formatter)
-#logger.addHandler(telegram_logging_handler)
+# Обработчик для вывода логов в файл
+file_handler = logging.FileHandler('bot.log')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
