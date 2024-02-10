@@ -1,14 +1,16 @@
 from helpers import jsonHelper
 
+import os
+
 path = jsonHelper.config.get('TASK_PATH')
 
 status_mapping = {key: value for key, value in jsonHelper.config.items() if key != "TASK_PATH"}
 
-
-
 def create_task_md(issue_key, issue_description):
-    with open(path + f'{issue_key}.md', 'w', encoding='utf-8') as file:
-        file.write(f"---\n"
+    filename = f'{issue_key}.md'
+    if not os.path.exists(filename):
+        with open(filename, 'w', encoding='utf-8') as file:
+            file.write(f"---\n"
                    f"Статус: \n"
                    f"Приоритет: \n"
                    f"Тип: \n"

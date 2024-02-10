@@ -8,11 +8,11 @@ import pytz
 #Стартовое сообщение
 def send_welcome(message):
     authHelper.bot.reply_to(message,
-                      f'Привет, Кирилл\n'
-                      'Я создан для того, чтобы:\n'
-                      '1. Уведомлять тебя о новых задачах в Jira /tasks\n'
-                      '2. Уведомлять тебя о новых комментариях к задачам\n'
-                      '3. Создавать в твоем Obsidian заметки по задачам\n')
+                      f'Команды:\n'
+                      '/tasks - показать задачи в работе\n'
+                      '/update_comments - проверить новые комментарии в задачах\n'
+                      '/update_tasks - обновить информацию о задачах\n'
+                      '/update_status - обновить статусы задач\n')
 
 #Вывод задач в работе
 def get_tasks(message):
@@ -20,9 +20,9 @@ def get_tasks(message):
     issues = jiraHelper.jira.search_issues(jql_query)
 
     if issues:
-        response = "Задачи на тебе:\n" + "\n".join([f"{issue.key}: {issue.fields.summary}" for issue in issues])
+        response = "Задачи в работе:\n" + "\n".join([f"{issue.key}: {issue.fields.summary}" for issue in issues])
     else:
-        response = "Ты свободен как птица в полёте :)"
+        response = "Задачи в работе отсутствуют"
 
     authHelper.bot.reply_to(message, response)
 
@@ -68,8 +68,30 @@ def update_comments():
 
     logHelper.logger.info('Проверка новых комментариев завершена')
 
-    # Запуск следующей проверки через 60 секунд
-    #threading.Timer(60, update_comments()).start()
+# Уведомления о новых задачах
+def update_tasks():
+    jql_query = f'assignee = {authHelper.JIRA_USERNAME} AND created >= -1d'
+    issues = jiraHelper.jira.search_issues(jql_query)
+
+    checked_assigned_tasks = dbHelper.load_checked_assigned_tasks()
+
+    new_tasks = []
+    for issue in issues:
+        issue_key = issue.key
+        if issue_key not in checked_assigned_tasks:
+            new_tasks.append(issue)
+            checked_assigned_tasks[issue_key] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        mdHelper.create_task_md(issue_key, issue.fields.description)
+
+    dbHelper.save_checked_assigned_tasks(checked_assigned_tasks)
+
+    if new_tasks:
+        response = "Новые задачи назначенные Вам:\n" + "\n".join(
+            [f"{issue.key}: {issue.fields.summary}" for issue in new_tasks])
+        authHelper.bot.send_message(authHelper.TELEGRAM_CHAT_ID, response)
+
+    logHelper.logger.info('Проверка новых задач завершена')
 
 #Уведомления о смене статусов
 def update_status():
@@ -100,38 +122,3 @@ def update_status():
     dbHelper.save_checked_statuses(checked_statuses)
 
     logHelper.logger.info('Проверка статусов задач завершена')
-
-    # Запуск следующей проверки через 60 секунд
-    #threading.Timer(60, update_status).start()
-
-
-# Уведомления о новых задачах
-def update_tasks():
-    jql_query = f'assignee = {authHelper.JIRA_USERNAME} AND created >= -1d'
-    issues = jiraHelper.jira.search_issues(jql_query)
-
-    checked_assigned_tasks = dbHelper.load_checked_assigned_tasks()
-
-    new_tasks = []
-    for issue in issues:
-        issue_key = issue.key
-        if issue_key not in checked_assigned_tasks:
-            new_tasks.append(issue)
-            checked_assigned_tasks[issue_key] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        mdHelper.create_task_md(issue_key, issue.fields.description)
-
-    dbHelper.save_checked_assigned_tasks(checked_assigned_tasks)
-
-    if new_tasks:
-        response = "Новые задачи назначены вам:\n" + "\n".join(
-            [f"{issue.key}: {issue.fields.summary}" for issue in new_tasks])
-        authHelper.bot.send_message(authHelper.TELEGRAM_CHAT_ID, response)
-
-    logHelper.logger.info('Проверка новых задач завершена')
-
-    # Запуск следующей проверки через 60 секунд
-    #threading.Timer(60, update_tasks).start()
-
-
-

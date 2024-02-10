@@ -1,8 +1,8 @@
 import handlers
 from helpers import authHelper, dbHelper, logHelper
 
-
-
+import sys
+import threading
 class TelegramLoggingHandler(logHelper.logging.Handler):
     def emit(self, record):
         log_entry = self.format(record)
@@ -35,10 +35,36 @@ def update_tasks(message):
     # Вызов функции check_for_new_comments для запроса обновлений комментариев
     handlers.update_tasks()
 
+def cancel_timers():
+    for timer in threading.enumerate():
+        if isinstance(timer, threading.Timer):
+            timer.cancel()
+
+def cleanup_and_exit():
+    cancel_timers()
+    sys.exit(0)
+
+def sсhedule_tasks():
+    try:
+        handlers.update_comments()
+        handlers.update_tasks()
+        handlers.update_status()
+
+    finally:
+        threading.Timer(60, sсhedule_tasks).start()
+
+
 def main():
     dbHelper.create_table()
+    sсhedule_tasks()
     authHelper.bot.polling()  # Запуск бота
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:  # Обработка прерывания пользователем (Ctrl+C)
+        cleanup_and_exit()
+    except Exception as e:  # Обработка других исключений
+        print(f"An error occurred: {str(e)}")
+        cleanup_and_exit()
